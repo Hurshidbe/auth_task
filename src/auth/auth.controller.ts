@@ -10,23 +10,23 @@ import { LoginDto } from './dto/login.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register')                                 // user registratsiyadan o'tyatti
-  create(@Body() createAuthDto: CreateAuthDto) {    // body tutilyapti
-    return this.authService.create(createAuthDto);  // body servicega uzatilvotti
+  @Post('register')                                 
+  create(@Body() createAuthDto: CreateAuthDto) {    
+    return this.authService.create(createAuthDto);  
   }
 
-  @Post('login')                                    // loginga api
-  async login(@Body() dto : LoginDto){              // dtodan o'tgan body kevotti
-    return await this.authService.login(dto)        // dto servicega uzatilvotti
+  @Post('login')                                   
+  async login(@Body() dto : LoginDto){          
+    return await this.authService.login(dto)       
   }
 
-  @Post('refresh')                                  // accessToken eskibqosa shunga call qilishadda
+  @Post('refresh')                               
   async refreshTwoTokents(@Body() dto : refreshTwoTokents){
-    return await this.authService.refreshAll(dto.refresh_token) //keyin bettan yangi 2ta token ovolishadi
+    return await this.authService.refreshAll(dto.refresh_token) 
   }
 
   @UseGuards(AuthGuard)
-  @Get('test')                                      // ishleshiga ishonmitganla uchun
+  @Get('test')                                     
   async guardTest(){
     return 'hello this is just a test message for verified users'
   }

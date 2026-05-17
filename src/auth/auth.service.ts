@@ -7,8 +7,6 @@ import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt';
 import { RefToken } from './entities/refresh-tokens.schema';
 import {v4 as uuid} from 'uuid'
-import { refreshTwoTokents } from './dto/refresh-token.dto';
-import { ref } from 'process';
 import { LoginDto } from './dto/login.dto';
 
 
@@ -22,10 +20,10 @@ export class AuthService {
 
   async create(createAuthDto: CreateAuthDto) {
    try {
-    if(createAuthDto.password!==createAuthDto.return_password) throw new BadRequestException(`parollar bir xil bo'lishi kerak`) // pass/re_pass match qilinvotti
-      const hashed_pass= await bcrypt.hash(createAuthDto.password, 12)               // password hashlanvotti
+    if(createAuthDto.password!==createAuthDto.return_password) throw new BadRequestException(`parollar bir xil bo'lishi kerak`) 
+      const hashed_pass= await bcrypt.hash(createAuthDto.password, 12)              
     
-      return await this.authRepo.create(                                             //user saqlanvotti
+      return await this.authRepo.create(                                          
         {
           email : createAuthDto.email,
           name : createAuthDto.name,
@@ -38,34 +36,34 @@ export class AuthService {
 
   async login(dto : LoginDto){
     try {
-      const user = await this.authRepo.findOne({email : dto.email})                     // user dbdan qidirilvotti
-      if (!user) throw new UnauthorizedException('email or password incorrect')         // user kemasa unauth otvotti
-        const passwordMatch = await bcrypt.compare(dto.password , user.password)        // pasword dbgan compare qilinvotti
-      if(!passwordMatch) throw new UnauthorizedException('email or password incorrect') // !match => unauth otvotti
-        return await this.generateTokens(user._id)                                      // match => 15 minut uchun accessToken yaratilvotti
+      const user = await this.authRepo.findOne({email : dto.email})                     
+      if (!user) throw new UnauthorizedException('email or password incorrect')         
+        const passwordMatch = await bcrypt.compare(dto.password , user.password)        
+      if(!passwordMatch) throw new UnauthorizedException('email or password incorrect') 
+        return await this.generateTokens(user._id)                                      
     } catch (error) {
-      throw new HttpException(error.message , error.status??500)                        // nerealni errolar uchun 
+      throw new HttpException(error.message , error.status??500)                       
     }
   }
 
-  async generateTokens (userId : Types.ObjectId){                                       // auth & refresh tokenlarni generatsiya qilaydigon funksiya
-    const accessToken = this.jwt.sign({userId}, {expiresIn : '15m'})                    // accessToken yarataydigon
-    const refreshToken =  uuid()                                                        // unique refreshToken yarataydigon
-    await this.storefreshToken(refreshToken, userId)                                    // refresh tokenni dbga userId bilan saqlutti
-    return {accessToken, refreshToken}                                                  // ikkov tokenlarni ham response qilib jo'natutti
+  async generateTokens (userId : Types.ObjectId){                                       
+    const accessToken = this.jwt.sign({userId}, {expiresIn : '15m'})                    
+    const refreshToken =  uuid()                                                        
+    await this.storefreshToken(refreshToken, userId)                                   
+    return {accessToken, refreshToken}                                                  
   }
   
-  async storefreshToken(token : string, userId : Types.ObjectId){                       // refreshToken ni dbga saqlaberaydigon funiksiya
+  async storefreshToken(token : string, userId : Types.ObjectId){                      
      await this.refTokenRepo.updateOne({userId}, {token,$set :{expiryDate : Date.now()+(7*24*60**2*1000)}}, {upsert : true})
   }
   
-  async refreshAll(refresh_token : string){                                             // accessToken charchaganda yangilaberaydigon funiksiya
-    const token = await this.refTokenRepo.findOne({                                     // refreshTokenni dbdan qidirutti
-      token : refresh_token,                                                            // body => refresh_token(hali chachamagan bo'ladi)
-      expiryDate : {$gte : new Date()}                                                  // tugashi hozirdan keyin (hali chachamagan)
+  async refreshAll(refresh_token : string){                                            
+    const token = await this.refTokenRepo.findOne({                                
+      token : refresh_token,                                                         
+      expiryDate : {$gte : new Date()}                                              
     }) 
-    if(!token) throw new UnauthorizedException()                                        // !token => bor ukam chekaro o'yna ditti
-      return await this.generateTokens(token.userId)                                    // token  => ikkov tokenni ham yangilab qaytarvotti
+    if(!token) throw new UnauthorizedException()                                      
+      return await this.generateTokens(token.userId)                                   
   }
 
 }
